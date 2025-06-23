@@ -1,0 +1,83 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "4000:4000"
+    env_file:
+      - api/.env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  webhook:
+    build:
+      context: .
+      dockerfile: webhooks/Dockerfile
+    ports:
+      - "4002:4002"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  sync-vendor:
+    build:
+      context: .
+      dockerfile: vendor-mocks/Dockerfile
+    ports:
+      - "5001:5001"
+    command: node sync.js
+
+  async-vendor:
+    build:
+      context: .
+      dockerfile: vendor-mocks/Dockerfile
+    ports:
+      - "5002:5002"
+    command: node async.js
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongo_data:
+  redis_data:
