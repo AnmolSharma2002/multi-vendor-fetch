@@ -1,0 +1,60 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "4000:4000"
+    env_file:
+      - api/.env
+    depends_on:
+      - mongo
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    depends_on:
+      - mongo
+      - redis
+
+  webhook:
+    build:
+      context: .
+      dockerfile: webhooks/Dockerfile
+    ports:
+      - "4002:4002"
+    depends_on:
+      - mongo
+
+  sync-vendor:
+    build:
+      context: .
+      dockerfile: vendor-mocks/Dockerfile
+    ports:
+      - "5001:5001"
+    command: node sync.js
+
+  async-vendor:
+    build:
+      context: .
+      dockerfile: vendor-mocks/Dockerfile
+    ports:
+      - "5002:5002"
+    command: node async.js
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo_data:
