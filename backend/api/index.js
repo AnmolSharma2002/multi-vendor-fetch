@@ -7,14 +7,11 @@ const jobRoutes = require("./routes/jobRoutes");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use("/jobs", jobRoutes);
 
-// DB & Server
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
